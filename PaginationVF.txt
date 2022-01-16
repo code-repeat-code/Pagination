@@ -1,0 +1,48 @@
+<apex:page controller="PaginationController">
+    <apex:form  >
+        <apex:pageBLock id="Contact_block">
+            <apex:pageBlockSection >
+                <apex:pageBlockSectionItem >
+                    <apex:outputPanel>
+                        <apex:outputLabel value="Select Object"/>
+                        <apex:selectList size="1" multiselect="false" value="{!selectedObject}">
+                            <apex:selectOptions value="{!objects}" />
+                            <apex:actionSupport event="onchange" action="{!details}" reRender="objFields"  />
+                        </apex:selectList>
+                      <apex:commandButton value="reset" action="{!reset}" reRender = ""/>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>  
+            </apex:pageBlockSection>
+        </apex:pageBLock>
+    </apex:form>
+    
+    <apex:form >
+        <apex:pageBlock id="objFields">
+            <apex:pageBlockSection >
+                <apex:pageBlockSectionItem >
+                    <apex:panelGrid columns="3">
+                        <apex:panelGroup style="width:40%">
+                          Fields Of <apex:outputLabel value=" {!selectedObject} :- " style = "font-weight:900;"/>
+                            <apex:selectList multiselect="true" value="{!fieldsToBeAdd}" style="width:180px;height:140px"> 
+                                <apex:selectOptions value="{!notSelectedFieldsInOptions}"/>
+                            </apex:selectList>
+                        </apex:panelGroup>
+                        <apex:panelGroup style="marign-top:80%" >
+                            <apex:commandButton value="Add" action="{!addFields}" style="position:relative;width:80px;height:30px;top:80px" reRender="objFields"/>         
+                            <apex:commandButton value="Remove" action="{!removeFields}" style="position:relative;width:80px;height:30px;top:90px;" reRender="objFields"/>     
+                        </apex:panelGroup>
+                        <apex:panelGroup >
+                            <apex:outputLabel value="Selected Fields:- "/>
+                            <apex:selectList style="width:180px;height:140px;" id="sfields" value="{!fieldsToBeRemoved}" multiselect="true">
+                                <apex:selectOptions value="{!SelectedFieldsInOptions}"/>
+                            </apex:selectList>
+                        </apex:panelGroup>
+                    </apex:panelGrid>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem>
+                    <apex:commandButton value = "Process" action= "#" style="position: fixed;bottom: 390px;right: 30px;" />
+                </apex:pageBlockSectionItem>
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+    </apex:form>   
+</apex:page>
