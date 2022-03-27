@@ -1,0 +1,92 @@
+<apex:page controller="PaginationController" lightningStylesheets="true">
+    <div style="background-color:#16325c;padding:0.01rem">   
+        <apex:form >   
+            <style type = "text/css">
+                .spinnerBg{
+                width: 100%;
+                height: 100%;
+                position: absolute;
+                background-color: #000;
+                opacity: 0.1;
+                z-index: 999999;
+                }
+                .spinner{
+                width: 100%;
+                height: 100%;
+                position: absolute;
+                background-image: url("/img/loading.gif");
+                background-size: 30px;
+                background-repeat: no-repeat;
+                background-attachment: fixed;
+                background-position: center;
+                z-index: 9999999;
+                opacity: 1;
+                }
+            </style>
+            <apex:actionStatus id="spinnerStatus">    
+                <apex:facet name="start">
+                    <div class="spinnerBg" />
+                    <div class="spinner" />
+                </apex:facet>
+            </apex:actionStatus>
+            <apex:pageBLock id="Contact_block">
+                <apex:pageMessages ></apex:pageMessages>
+                <apex:pageBlockSection >
+                    <apex:pageBlockSectionItem >
+                        <apex:outputPanel >
+                            <apex:outputLabel value="Select Object"  style="font-family:Arial Black;" /> &nbsp;&nbsp;
+                            <apex:selectList size="1" multiselect="false" value="{!selectedObject}">
+                                <apex:selectOptions value="{!objects}" />
+                                <apex:actionSupport event="onchange" action="{!details}" reRender="objFields,Records_View,ee,cmp" status="spinnerStatus" />
+                            </apex:selectList> &nbsp;&nbsp;
+                            <apex:commandButton value="reset" action="{!reset}"/>
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem> 
+                </apex:pageBlockSection>
+            </apex:pageBLock>
+        </apex:form>
+    </div>
+<apex:form id="objFields">
+        <apex:pageBlock rendered="{! if(objName !='',true,false)}">
+            <apex:pageBlockSection >
+                <apex:pageBlockSectionItem >
+                    <apex:panelGrid columns="3">
+                        <apex:panelGroup >
+                            <apex:outputLabel value=" Fields Of  " style="vertical-align:top;" /> <span style="vertical-align:top;font-weight: bold;">{!objName} :- </span>
+                            <apex:selectList multiselect="true" value="{!fieldsToBeAdd}" style="width:180px;height:140px; "> 
+                                <apex:selectOptions value="{!notSelectedFieldsInOptionsList}"/>
+                            </apex:selectList>
+                        </apex:panelGroup>
+                        <apex:panelGroup >
+                           
+                            <table style = "bottom:5px;left:10px;" >
+                                <tr><td>
+                                    <apex:commandButton value="Add" action="{!addFields}" reRender="objFields" style="width:50px;" status="spinnerStatus"/>
+                                    </td></tr>
+                                <tr><td>
+                                    <apex:commandButton value="Remove" action="{!removeFields}" reRender="objFields" style="width:50px" status="spinnerStatus"/>  
+                                    </td></tr>
+                            </table>
+                             
+                        </apex:panelGroup>
+                     
+                        <apex:panelGroup >
+                            <apex:outputLabel value="Selected Fields:- " style="vertical-align:top;" />
+                            <apex:selectList value="{!fieldsToBeRemoved}" multiselect="true" style="width:180px;height:140px;">
+                                <apex:selectOptions value="{!SelectedFieldsInOptionsList}"  />
+                            </apex:selectList>
+                        </apex:panelGroup>
+                    </apex:panelGrid>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:commandButton style="position: relative;top:130px; Left :40%"  value="Process"   disabled="{!hasSelectedFields}" action="{!process}"  oncomplete="invokeShowMethodOfCompoCon()" id="ee" status="spinnerStatus" reRender="cmp"/> 
+                </apex:pageBlockSectionItem>
+            </apex:pageBlockSection>   
+        </apex:pageBlock>
+    </apex:form>
+    <!--===========================================================================       ADDING PAGINATION COMPONENT      =========================================================================-->
+    <apex:outputPanel id="cmp">    
+    <c:PaginationComp fObject="{!finalObjectName}" fFieldsList="{!finalSelectedFieldsList}"  rendered="{!temp}" >
+         </c:PaginationComp>
+      </apex:outputPanel>
+</apex:page>
