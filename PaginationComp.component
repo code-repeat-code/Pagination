@@ -1,0 +1,169 @@
+<apex:component Controller="PaginationCompController"  allowDML="true">
+<apex:attribute name="fObject" type="String" description="Any Object" assignTo="{!selectedObject}" />
+<apex:attribute name="fFieldsList" type="String[]" description="List of Fields" assignTo="{!selectedFields}"/>  
+<apex:form id="Records_View">
+	<script type="text/javascript">
+	function selectAllCheckboxes(){
+		var masterBoxval = document.getElementsByClassName("MasterClass");
+		var childBoxval = document.getElementsByClassName("ChildClass");
+		if(masterBoxval[0].checked == true){
+			for(var i = 0;i<childBoxval.length;i++){
+				childBoxval[i].checked = true;
+			}
+		}
+		if(masterBoxval[0].checked == false){
+			for(var i = 0;i<childBoxval.length;i++){
+				childBoxval[i].checked = false;
+			}
+		}
+	}
+	function deselectMasterBox(){
+		var masterval = document.getElementsByClassName("MasterClass");
+		var childval = document.getElementsByClassName("ChildClass");
+		var temp = 0;
+		for(var i = 0;i<childval.length;i++){
+			if(childval[i].checked == true){
+				temp++;
+			}
+			if(childval[i].checked == false){
+				masterval[0].checked = false;
+				break;
+			}
+			
+		}
+		if(temp == childval.length){
+			masterval[0].checked = true;
+		}
+		
+	}
+	
+	function csvDownloaderFun(csv,headers){
+		if(headers.length == 0){
+			alert('No Record is selected....');
+		}
+		else{
+			var csvData = csv + headers;          
+			console.log('The fianl' + csvData);            
+			var hiddenElement = document.createElement('a');  
+			hiddenElement.href = 'data:text/csv;charset=utf-8,' + encodeURI(csvData);  
+			hiddenElement.target = '_blank';    
+			//provide the name for the CSV file to be downloaded  
+			hiddenElement.download = 'Records.csv';  
+			hiddenElement.click();
+		}
+		
+	}        
+	</script>
+	<!-- ========================== Invoking the show method automatically by using JS     ===================    -->
+	<apex:actionFunction name="invokeShowMethodOfCompoCon" action="{!show}" reRender="Records_View,recPage" />
+	<apex:outputText rendered="{!hasRecords}" ><apex:pageMessages ></apex:pageMessages></apex:outputText>
+	
+	<!-- ===================================  PAGE BLOCK FOR THE RECORDS ======================================== -->
+	
+    <apex:pageBlock id="recPage" rendered="{!hFields}"  >
+		<apex:pageMessages ></apex:pageMessages> 
+		<!--  Panel for Buttons  -->
+		<div align = "left">  
+			<table>
+				<tr>
+					<td>
+						<apex:commandButton value="New Record"  reRender="recPage" onclick="window.open('/{!lastUniqueDigOfObj}/e')"/>   
+					</td>
+					<td>
+						<apex:commandButton value="Delete Selected"  action="{!deleteSelectedRecords}" onclick="if(!confirm('Are you sure?')) return false;" reRender="recPage,selectList">
+						</apex:commandButton>
+					</td>
+					<td>    
+						<apex:commandButton value="Downlaod CSV" action="{!downloadCsv}"  oncomplete="csvDownloaderFun('{!headerForCsv}','{!RecordsForCsv}')" reRender="ff"  />
+					</td>
+				</tr>
+			</table> 
+		</div>
+       
+		<!-- Panel For Alphabetical Sorting         --> 
+		<div align="right">
+			<apex:panelGrid >
+				<apex:repeat value="{!alphabetList}" var="alph">
+					<apex:commandLink value="{!alph} | " action="{!sortByAlphabets}" reRender="recPage" status="spinnerStatus" >
+						
+						<apex:param value="{!alph}" name="Alphabet" assignTo="{!alphaToBeSearch}"/>   
+					</apex:commandLink>
+				</apex:repeat>
+			</apex:panelGrid>
+		</div>  
+		<apex:outputPanel layout="block" style="overflow:auto;width:1280px;height:180px" >
+		<apex:pageBlocktable value="{!listOfWrapper}" var="rec" > 
+			<!-- Add the CheckBoxes before the Actions links -->
+			<apex:column width="20px" >
+				<apex:facet name="header">
+					<!--   Master CheckBox  -->
+					<apex:inputcheckbox value="{!rec.isSelected}"  onclick="selectAllCheckboxes()" styleClass="MasterClass" />
+				</apex:facet>
+				<!--  CheckBox for the Each Record    -->
+				<apex:inputcheckbox value="{!rec.isSelected}" onclick="deselectMasterBox()" styleClass="ChildClass"/>
+			</apex:column>
+			<!--  Adding Header for the same column i.e(Action) by using facet  -->
+			<apex:column style="width:60px">
+				<apex:facet name="header">
+					<apex:outputText > Action </apex:outputText>
+				</apex:facet>
+				<apex:outputLink value="/{!rec.obj.id}/e?retURL=/apex/{!$CurrentPage.Name}" style="font-weight:bold;text-decoration:none;color:#0645AD;">
+					Edit |&nbsp;
+				</apex:outputLink>
+				<apex:commandLink action="{!deleteAccount}" onclick="if(!confirm('Are you sure?')) return false;" style="font-weight:bold;text-decoration:none;color:#0645AD;">
+					Del
+					<apex:param value="{!rec.obj.id}" assignTo="{!recId}" name="recId"/>
+				</apex:commandLink>
+				
+			</apex:column>   
+			<apex:repeat value="{!selectedFieldsListTemp}" var="itr">
+				<apex:column value="{!rec.obj[itr]}">
+					<apex:facet name="header">
+						<apex:commandLink action="{!sortByColumn}" reRender="recPage,ee" value=" {!$ObjectType[objName].fields[itr].label} {!if(sortingValues == itr,IF(sortDir=='desc','↓','↑'),'')}" id="ee" status="spinnerStatus" oncomplete="deselectMasterBox()" >  
+							<apex:param name="column" value="{!itr}" assignTo="{!sortingValues}"/>
+						</apex:commandLink>
+					</apex:facet>
+				</apex:column>
+			</apex:repeat>                    
+		</apex:pageBlocktable>
+        </apex:outputPanel>
+		<!-- Pagination -->
+		<table style="width: 100%">
+			<tr>
+				<!-- Page X of Y -->
+				<td>
+					<!-- Dropdown for the to visible the records -->
+					<apex:selectList value="{!Size}" size="1" id="selectList" >
+						<apex:selectOption itemValue="5" itemLabel="5"/>
+						<apex:selectOption itemValue="10" itemLabel="10"/>
+						<apex:selectOption itemValue="15" itemLabel="15"/>
+						<apex:selectOption itemValue="20" itemLabel="20"/>
+						<apex:selectOption itemValue="500" itemLabel="500"/>
+						<apex:selectOption itemValue="1000" itemLabel="1000"/>
+						<apex:actionSupport event="onchange" action="{!pageSize}" reRender="recPage" oncomplete="deselectMasterBox()"  />
+					</apex:selectList>
+				</td>
+				<td align="center">
+					<!--First Button-->
+					<apex:commandButton action="{!first}" value="First" disabled="{!!ssc.hasPrevious}" reRender="recPage" status="spinnerStatus" oncomplete="deselectMasterBox()" />
+					<!--Previous Button-->
+					<apex:commandButton action="{!previous}" value="Previous" disabled="{!!ssc.hasPrevious}" reRender="recPage" status="spinnerStatus" oncomplete="deselectMasterBox()"/>
+					<!--Next Button-->
+					<apex:commandButton action="{!next}" value="Next" disabled="{!!ssc.hasNext}" reRender="recPage" status="spinnerStatus" oncomplete="deselectMasterBox()"/>
+					<!--Last Button-->
+					<apex:commandButton action="{!last}" value="Last" disabled="{!!ssc.hasnext}" reRender="recPage" status="spinnerStatus" oncomplete="deselectMasterBox()"/> 
+				</td>
+				<td align="right">
+					<!--====================================        Records per page -----------------  Jumping to the Page Number by Entering any number          =                        -->
+					
+					Page:
+					<apex:inputText value="{!pageNumber}" size="1"> 
+						<apex:actionSupport event="onblur" action="{!finalPageNumber}" reRender="recPage"  oncomplete="deselectMasterBox()" />
+					</apex:inputText>
+					<apex:outputText value=" {! ssc.PageNumber} of {! CEILING(ssc.ResultSize / ssc.PageSize) }"/>   
+				</td>
+			</tr>
+		</table>
+	</apex:pageBlock>
+</apex:form> 
+</apex:component>
